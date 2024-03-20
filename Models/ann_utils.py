@@ -1,0 +1,1383 @@
+#import all the required libraries
+import numpy as np
+import pandas as pd
+import librosa
+import IPython.display as ipd
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import os
+import sys
+import shutil
+import random
+import time
+import importlib
+import sklearn
+importlib.reload(importlib.import_module('Visualization.model_plot'))
+from Visualization.model_plot import *
+from tensorflow.keras.models import save_model # from labs
+from scikeras.wrappers import KerasClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_curve
+from sklearn.metrics import make_scorer
+from sklearn.metrics import RocCurveDisplay, precision_recall_curve, PrecisionRecallDisplay
+from sklearn.metrics import precision_recall_fscore_support, auc
+from sklearn.model_selection import GridSearchCV
+import keras_tuner as kt
+
+
+
+#class from course laboratories
+class ModelSaveCallback(tf.keras.callbacks.Callback):
+
+    def __init__(self, file_name):
+        super(ModelSaveCallback, self).__init__()
+        self.file_name = file_name
+
+    def on_epoch_end(self, epoch, logs=None):
+        save_model(self.model, self.file_name)
+        print(f"Epoch {epoch} - Model saved in {self.file_name}")
+
+#class to compute the delta and delta_delta inside a layer
+class MFCCWithDeltaLayer(tf.keras.layers.Layer):
+    def __init__(self, n_mfcc=40, order=2, **kwargs):
+        super(MFCCWithDeltaLayer, self).__init__(**kwargs)
+        self.n_mfcc = n_mfcc
+        self.order = order
+
+    def call(self, inputs):
+        # Extract the MFCC matrix
+        mfcc = inputs
+        
+        # Calculate the first-order Mel cepstral coefficients (delta)
+        padded_mfcc = tf.pad(mfcc, paddings=[[0, 0], [1, 1], [0, 0]])
+        delta_mfcc = (padded_mfcc[:, 2:] - padded_mfcc[:, :-2]) / 2.0
+        
+        # Optionally, calculate the second-order Mel cepstral coefficients (delta-delta)
+        if self.order == 2:
+            padded_delta_mfcc = tf.pad(delta_mfcc, paddings=[[0, 0], [1, 1], [0, 0]])
+            delta_delta_mfcc = (padded_delta_mfcc[:,2:] - padded_delta_mfcc[:,:-2]) / 2.0
+
+        # Concatenate the delta coefficient to the original MFCC matrix
+        mfcc_with_delta = tf.concat([mfcc, delta_mfcc], axis=-1)
+        
+        # Optionally, concatenate the delta-delta coefficient
+        if self.order == 2:
+            mfcc_with_delta = tf.concat([mfcc_with_delta, delta_delta_mfcc], axis=-1)
+        
+        return mfcc_with_delta
+
+    def get_config(self):
+        config = super(MFCCWithDeltaLayer, self).get_config()
+        config.update({'n_mfcc': self.n_mfcc, 'order': self.order})
+        return config
+
+#class to cut the output of a model in the last layer
+class OutputCutterLayer(tf.keras.layers.Layer):
+    def __init__(self, desired_shape, **kwargs):
+        super(OutputCutterLayer, self).__init__(**kwargs)
+        self.desired_shape = desired_shape
+
+    def call(self, inputs):
+        #input_shape = tf.shape(inputs)
+        input_shape = tuple(inputs.shape)
+        # Cut the input tensor if it is larger than the desired shape
+        output = inputs[:, :self.desired_shape[1], :self.desired_shape[2]]
+
+        # Compute the amount of padding required
+        rows_to_pad = self.desired_shape[1] - input_shape[1]
+        cols_to_pad = self.desired_shape[2] - input_shape[2]
+
+        # Pad the output tensor with zeros if necessary
+        if rows_to_pad > 0 or cols_to_pad > 0:
+            paddings = tf.constant([[0, 0], [0, rows_to_pad], [0, cols_to_pad]])
+            output = tf.pad(output, paddings, mode='CONSTANT', constant_values=0.0)     
+            
+        return output
+
+    def get_config(self):
+        config = super(OutputCutterLayer, self).get_config()
+        config.update({'desired_shape': self.desired_shape})
+        return config
+
+@tf.autograph.experimental.do_not_convert
+def create_dataset(subfolder_path, # folder of the audio data we want to import
+                   verbose = 1, # 0, 1 level of verbose
+                   batch_size = 30,  
+                   shuffle = True, 
+                   validation_split = 0.25, # this is the splitting of train vs validation + test
+                   cache_file_train = '', # str path of the chaching file or '' to cache in memory
+                   cache_file_val = '', 
+                   cache_file_test = '', 
+                   normalize = True, # normalization preprocessing 
+                   num_repeat = None, # number of times the dataset is repeated
+                   preprocessing = None,  # "STFT", "MEL", "MFCC"
+                   delta = True,  # True or False only if preprocessing = "MFCC"
+                   delta_delta = True,  #  True or False only if preprocessing = "MFCC"
+                   labels = "inferred", # labels = 'inferred' or None (for unsupervised learning)
+                   resize = False, # we can resize the images generated by the preprocessing
+                   new_height = 64,
+                   new_width = 128,
+                   save_train = None, # save the dataset as keras folder
+                   save_val = None,
+                   save_test = None,
+                   save_labels = None, #path to the file without the extension (always txt)
+                   show_example_batch = False, # show an example of the batch
+                   ndim = 2,
+                   transpose = True,
+                   ): 
+                   # INPUT: str - path of the audio directory 
+                   # OUTPUT: train, validation, test set as tensorflow dataset
+
+    if save_labels is not None:
+        save_labels = save_labels + '.txt'
+
+    sample_rate = 44100
+    #check if the dataset are already saved and eventually load them
+    if labels is not None:
+        if save_train is not None and save_test is not None and save_val is not None and save_labels is not None:
+
+            if os.path.exists(save_train) and os.path.exists(save_test) and os.path.exists(save_val) and os.path.exists(save_labels):
+                if verbose > 0:
+                    print("Loading the dataset from the saved file")
+                train = tf.data.Dataset.load(save_train)
+                val = tf.data.Dataset.load(save_val)
+                test = tf.data.Dataset.load(save_test)
+                with open(save_labels, 'r') as f:
+                    label_names = [line.rstrip('\n') for line in f]
+
+                if show_example_batch:
+                    INPUT_DIM, n_labels = example_batch(train, val, test, label_names, verbose=verbose)
+                    return train, val, test, label_names, INPUT_DIM, n_labels
+                else:
+                    return train, val, test, label_names
+                
+            #tell if you have just some of train, val and test saved, not all
+            elif os.path.exists(save_train) or os.path.exists(save_test) or os.path.exists(save_val) or os.path.exists(save_labels):
+                print("You have just some of the files saved, not all of them")
+                print("Proceding with normal dataset building.")
+    else:
+        if save_train is not None and save_test is not None and save_val is not None:
+            if os.path.exists(save_train) and os.path.exists(save_test) and os.path.exists(save_val):
+                if verbose > 0:
+                    print("Loading the dataset from the saved file")
+                train = tf.data.Dataset.load(save_train)
+                val = tf.data.Dataset.load(save_val)
+                test = tf.data.Dataset.load(save_test)
+
+                if show_example_batch:
+                    INPUT_DIM = example_batch(train, val, test, verbose=verbose)
+                    return train, val, test, INPUT_DIM
+                else:
+                    return train, val, test
+            #tell if you have just some of train, val and test saved, not all
+            elif os.path.exists(save_train) or os.path.exists(save_test) or os.path.exists(save_val):
+                print("You have just some of the files saved, not all of them")
+                print("Proceding with normal dataset building.")
+
+    if verbose > 0:
+        print("Creating dataset from folder: ", subfolder_path)
+
+    #auxiliary functions
+    @tf.autograph.experimental.do_not_convert
+    def squeeze(audio, labels=None):
+        # INPUT: audio as a tf dataset
+        # OUTPUT: audio + labels or only audio
+        # used to remove a dimension from the tensor
+        if audio.shape[-1] is None:
+            audio = tf.squeeze(audio, axis=-1) 
+        if labels is not None:
+            return audio, labels
+        else:
+            return audio
+  
+    @tf.autograph.experimental.do_not_convert
+    def spectral_preprocessing_audio(audio, 
+                                     sample_rate = 44100, 
+                                     segment = 20, 
+                                     n_fft = None, #padd the frames with zeros before DFT
+                                     overlapping = 10, 
+                                     cepstral_num = 40, 
+                                     N_filters = 50, 
+                                     preprocessing = preprocessing,
+                                     delta = delta, 
+                                     delta_delta = delta_delta):
+                                     # INPUT: audio as a tensorflow object
+                                     # OUTPUT: preprocessed audio with STFT, MEL, MFCC as desired 
+                                     # used to perform the spectral preprocessing (STFT, MEL, MFCC with/out delta, delta-delta)
+
+        
+
+                            
+        audio = audio.numpy()
+
+        # transform the segment and overlapping from ms to samples
+        if n_fft is None:
+            n_fft = segment
+        nperseg = round(sample_rate * segment / 1000)
+        noverlap = round(sample_rate * overlapping / 1000)
+        n_fft = round(sample_rate * n_fft / 1000)
+        hop_length = nperseg - noverlap
+        r = None
+
+        # using librosa to perform the preprocessing
+        if preprocessing == "STFT":
+            stft_librosa = librosa.stft(audio, hop_length=hop_length, win_length=nperseg, n_fft=n_fft)
+            r = librosa.amplitude_to_db(np.abs(stft_librosa), ref=np.max)
+
+
+        elif preprocessing == "MEL":
+            mel_y = librosa.feature.melspectrogram(y=audio, sr=sample_rate, n_fft=n_fft, hop_length=hop_length,
+                                                   win_length=nperseg) 
+            r = librosa.power_to_db(mel_y, ref=np.max)
+        elif preprocessing == "MFCC":
+            mfcc_y = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=cepstral_num, n_fft=n_fft,
+                                          hop_length=hop_length, htk=True, fmin=40, n_mels=N_filters)
+
+            # now we calculate the delta and delta-delta if needed
+            if delta:
+                delta_mfccs = librosa.feature.delta(mfcc_y)
+                if delta_delta:
+                    delta2_mfccs = librosa.feature.delta(mfcc_y, order=2)
+                if delta and not delta_delta:
+                    mfccs_features = np.concatenate((mfcc_y, delta_mfccs))
+                elif delta and delta_delta:
+                    mfccs_features = np.concatenate((mfcc_y, delta_mfccs, delta2_mfccs))
+            if not delta and not delta_delta:
+                mfccs_features = mfcc_y
+            r = mfccs_features
+
+        return r
+    
+    @tf.autograph.experimental.do_not_convert
+    def reshape_tensor(matrix):
+        # INPUT: the audio preprocessed by STFT, MEL or MFCC
+        # OUTPUT: the audio reshaped as a tensor (needed for the convolutional layers)
+        matrix = tf.squeeze(matrix)
+        tensor = tf.expand_dims(matrix, axis=2)
+        return tensor
+    
+    # @tf.autograph.experimental.do_not_convert
+    def find_max_lazy(train):
+        max = 0
+        lazy_number = 0
+        if labels:
+            for batch, label in train:
+                if lazy_number<4:
+                    new = tf.reduce_max(tf.abs(batch)) 
+                    if new > max:
+                        max = new
+                lazy_number+=1
+            if verbose > 0:
+                print(f'The max value is {max}')
+        else:
+            for batch in train:
+                if lazy_number<4:
+                    new = tf.reduce_max(tf.abs(batch)) 
+                    if new > max:
+                        max = new
+                lazy_number+=1
+            if verbose > 0:
+                print(f'The max value is {max}')            
+        
+        return max
+    
+    @tf.autograph.experimental.do_not_convert
+    def reshape_images_map(image, new_height = new_height, new_width = new_width):
+        # INPUT: the audio preprocessed by STFT, MEL or MFCC
+        # OUTPUT: the audio reshaped as a tensor (needed for the convolutional layers)
+        image = tf.image.resize(image, [new_height, new_width])
+        return image
+
+    @tf.autograph.experimental.do_not_convert
+    def decode_ogg(ogg_path):
+        # INPUT: the path of the audio file
+        # OUTPUT: the audio as a numpy array
+        ogg_path = ogg_path.numpy().decode("utf-8")
+        ogg_audio = librosa.load(ogg_path, sr = sample_rate)
+        return ogg_audio
+
+    def reshape(audio, ndim = ndim, preprocessing = preprocessing, verbose = verbose, tranpose = transpose):
+        if preprocessing is not None:
+            if not ndim in [2,3]:
+                raise ValueError(f'ndim must be 2 or 3, not {ndim}')
+            if ndim == 2:
+                audio = tf.squeeze(audio) 
+                if transpose:
+                    audio = tf.transpose(audio)
+            elif ndim == 3:
+                audio = tf.squeeze(audio)
+                if transpose:
+                    audio = tf.transpose(audio)
+                audio = tf.expand_dims(audio, axis=2)
+        else:
+            if not ndim in [1,2]:
+                raise ValueError(f'ndim must be 1 or 2, not {ndim}')
+            if ndim == 1:
+                audio = tf.squeeze(audio)
+            elif ndim == 2:
+                audio = tf.expand_dims(audio, axis=1)
+        return audio
+    # creation of the tf dataset from an audio folder 
+    # Supervised learning case
+    if labels is not None:
+
+        train, val_test = tf.keras.utils.audio_dataset_from_directory(
+            directory =subfolder_path.replace('\\','/'),
+            labels=labels, 
+            label_mode='categorical',
+            class_names=None,
+            batch_size=None,
+            sampling_rate=None,
+            output_sequence_length=220500,
+            ragged=False,
+            shuffle=shuffle,
+            seed=42,
+            validation_split=validation_split,
+            subset='both',
+        )
+
+        if labels is not None:
+            label_names = np.array(train.class_names)
+        if verbose > 0:
+            print("label names:", label_names)
+              
+        # dropping the extra dimension from the tensors 
+        train = train.map(squeeze, tf.data.AUTOTUNE)
+        val_test = val_test.map(squeeze, tf.data.AUTOTUNE)
+    # Unsupervised learning case
+    else:
+        if verbose>0:
+            print('You are using an unlabelled dataset')
+        dataset = tf.data.Dataset.list_files(subfolder_path + '/*.ogg', shuffle=False)
+        dataset = dataset.map(lambda path: tf.py_function(func=decode_ogg, inp=[path], Tout=tf.float32))
+        #dataset = dataset.interleave(lambda path:  tf.py_function(func=decode_ogg, inp=[path], Tout=tf.float32), block_length=16, num_parallel_calls=tf.data.AUTOTUNE )
+
+        # Get the total number of samples in the dataset
+        dataset_size = dataset.cardinality().numpy()
+        if verbose > 0:
+            print(f"Dataset size: {dataset_size} samples")
+
+        # Calculate the number of samples for validation
+        validation_size = int(dataset_size * validation_split)
+        if verbose > 0:
+            print(f"Validation-Test size: {validation_size} samples")
+
+        # Split the dataset into train and validation sets
+        train = dataset.skip(validation_size)
+        val_test = dataset.take(validation_size)    
+
+
+    # Split the validation and test set (val and test set always have the same cardinality)
+    val_size = round(val_test.cardinality().numpy() * (1 - validation_split))
+    test_size = val_test.cardinality().numpy() - val_size
+    test = val_test.shard(num_shards=2, index=0)
+    val = val_test.shard(num_shards=2, index=1)
+
+    #now we actually map the raw data to the preprocessed data 
+    
+    if preprocessing:
+        # we need to separate the cases of labelled and unlabelled since the map function works on the whole dataset
+        # and not only on some columns 
+        if labels:
+            train = train.map(lambda audio, target: (tf.py_function(spectral_preprocessing_audio,
+                                                                [audio],
+                                                                [tf.float32]), target))
+            train = train.map(lambda matrix, target:(reshape_tensor(matrix), target), tf.data.AUTOTUNE)
+            val = val.map(lambda audio, target: (tf.py_function(spectral_preprocessing_audio,   
+                                                                [audio],
+                                                                [tf.float32]), target))
+            val = val.map(lambda matrix, target:(reshape_tensor(matrix), target), tf.data.AUTOTUNE)
+            test = test.map(lambda audio, target: (tf.py_function(spectral_preprocessing_audio,
+                                                                [audio],
+                                                                [tf.float32]), target))
+            test = test.map(lambda matrix, target:(reshape_tensor(matrix), target), tf.data.AUTOTUNE)
+        else:
+            train = train.map(lambda audio: tf.py_function(spectral_preprocessing_audio, [audio], [tf.float32]),
+                            tf.data.AUTOTUNE)
+            train = train.map(lambda matrix: reshape_tensor(matrix), tf.data.AUTOTUNE)
+            val = val.map(lambda audio: tf.py_function(spectral_preprocessing_audio, [audio], [tf.float32]),
+                            tf.data.AUTOTUNE)
+            val = val.map(lambda matrix: reshape_tensor(matrix), tf.data.AUTOTUNE)
+            test = test.map(lambda audio: tf.py_function(spectral_preprocessing_audio, [audio], [tf.float32]),
+                            tf.data.AUTOTUNE)
+            test = test.map(lambda matrix: reshape_tensor(matrix), tf.data.AUTOTUNE)
+
+        if resize:
+            if labels:
+                train = train.map(lambda image, target: (tf.py_function(reshape_images_map, [image],[tf.float32]), target))
+                #train = train.map(lambda matrix, target:(reshape_tensor(matrix), target), tf.data.AUTOTUNE)
+                val = val.map(lambda image, target: (tf.py_function(reshape_images_map, [image], [tf.float32]), target))
+                #val = val.map(lambda matrix, target:(reshape_tensor(matrix), target), tf.data.AUTOTUNE)
+                test = test.map(lambda image, target: (tf.py_function(reshape_images_map, [image], [tf.float32]), target))
+                #test = test.map(lambda matrix, target:(reshape_tensor(matrix), target), tf.data.AUTOTUNE)
+            else:
+                train = train.map(lambda image: tf.py_function(reshape_images_map, [image], [tf.float32]))
+                #train = train.map(lambda matrix: reshape_tensor(matrix), tf.data.AUTOTUNE)
+                val = val.map(lambda image: tf.py_function(reshape_images_map, [image], [tf.float32]))
+                #val = val.map(lambda matrix: reshape_tensor(matrix), tf.data.AUTOTUNE)
+                test = test.map(lambda image: tf.py_function(reshape_images_map, [image], [tf.float32]))
+                #test = test.map(lambda matrix: reshape_tensor(matrix), tf.data.AUTOTUNE)
+
+
+    if resize and not preprocessing:
+        print("You can't resize the images if you don't preprocess them first")
+            
+    # Normalization step
+    if normalize:
+        max = find_max_lazy(train)
+
+        if labels:
+            train = train.map(lambda matrix, target: (matrix/max, target), tf.data.AUTOTUNE)
+            val = val.map(lambda matrix, target: (matrix/max, target), tf.data.AUTOTUNE)
+            test = test.map(lambda matrix, target: (matrix/max, target), tf.data.AUTOTUNE)
+        else:
+            train = train.map(lambda matrix : matrix/max, tf.data.AUTOTUNE)
+            val = val.map(lambda matrix : matrix/max, tf.data.AUTOTUNE)
+            test = test.map(lambda matrix : matrix/max, tf.data.AUTOTUNE)
+
+
+    if labels is None:
+        # Duplicate data for the autoencoder (input = output)
+        train = train.map(lambda x: (x, x))
+        val = val.map(lambda x: (x, x))
+        test = test.map(lambda x: (x, x))
+
+    #final check for the dimension with reshape
+    train = train.map(lambda audio, target: (reshape(audio), target), tf.data.AUTOTUNE)
+    val = val.map(lambda audio, target: (reshape(audio), target), tf.data.AUTOTUNE)
+    test = test.map(lambda audio, target: (reshape(audio), target), tf.data.AUTOTUNE)
+
+    # Caching the dataset
+    def cache_dataset(dataset, cache_file):
+        if cache_file == '':
+            dataset = dataset.cache()
+        else:    
+            cache_dir = os.path.dirname(cache_file)
+            os.makedirs(cache_dir, exist_ok=True)
+            dataset = dataset.cache(cache_file)
+        if verbose > 0:
+            if cache_file == '':
+                print("Caching the dataset in memory")
+            else:
+                print(f"Cached in file {cache_file}")
+        return dataset
+
+    if verbose > 0 and cache_file_train is not None:
+        print("Caching the datasets...")
+    train = cache_dataset(train, cache_file_train)
+    val = cache_dataset(val, cache_file_val)
+    test = cache_dataset(test, cache_file_test)
+
+    # Shuffling the dataset 
+    if shuffle:
+        train = train.shuffle(train.cardinality().numpy(), reshuffle_each_iteration=True)
+        # We should not shuffle the validation and test set
+        #val = val.shuffle(val_size, reshuffle_each_iteration=True)
+        #test = test.shuffle(test_size, reshuffle_each_iteration=True)
+        # Batching the dataset 
+        
+    if batch_size:
+        train = train.batch(batch_size)
+        val = val.batch(batch_size)
+        test = test.batch(batch_size)
+
+    # Used in order to pad the dataset
+    AUTOTUNE = tf.data.AUTOTUNE
+    if num_repeat is not None:
+        train = train.repeat(num_repeat).prefetch(buffer_size=AUTOTUNE)
+        val = val.repeat(num_repeat).prefetch(buffer_size=AUTOTUNE)
+        test = test.repeat(num_repeat).prefetch(buffer_size=AUTOTUNE)
+    else:
+        train = train.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        val = val.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        test = test.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+    #saving the dataset as save
+    def save_dataset(dataset, save_file):
+        if save_file and type(dataset)!=np.ndarray:
+            #print('dataset type',type(dataset))
+            save_dir = os.path.dirname(save_file)
+            #check if the directory exists
+            if not os.path.exists(save_dir):
+                os.mkdir(save_dir)
+            else:
+                #check if the file exists
+                if os.path.exists(save_file):
+                    shutil.rmtree(save_file)
+
+            dataset.save(save_file)
+            if verbose>0:
+                print(f"Dataset saved in {save_file}")
+                
+        elif save_file and type(dataset)==np.ndarray:
+        
+            #check if the file .txt already exists
+            if os.path.exists(save_file):
+                os.remove(save_file)
+
+            #create an empty txt file
+            with open(save_file, 'w') as f:
+                for s in dataset:
+                    f.write(str(s) + '\n')
+
+        return dataset
+    
+    if verbose>0 and save_train is not None:
+        print("Saving the datasets...")
+
+    #saving the datasets
+    train = save_dataset(train, save_train)
+    val = save_dataset(val, save_val)
+    test = save_dataset(test, save_test)
+
+    #saving the labels
+    if labels is not None:
+        if verbose > 0:
+            print("Saving the labels...")
+        label_names = save_dataset(label_names, save_labels)
+    
+    #Several return statements depending on the needs
+    if labels is not None:
+        if show_example_batch:
+            if verbose > 0:
+                print("Showing example batch")
+            INPUT_DIM, num_classes = example_batch(train, val, test, label_names, verbose=verbose)
+            return train, val, test, label_names, INPUT_DIM, num_classes
+        else:
+            return train, val, test, label_names
+    else:
+        if show_example_batch:
+            INPUT_DIM = example_batch(train, val, test, verbose = verbose)
+            return train, val, test, INPUT_DIM
+        else:
+            return train, val, test
+        
+#care for some conflicts between finda max lazy and resize when loading the dataset
+@tf.autograph.experimental.do_not_convert
+def create_dataset_lite(data_frame = None,
+                        labeled = True,
+                        path_to_ogg_files = None,
+                        batch_size = 30,
+                        preprocessing = None, # "STFT", "MEL", "MFCC" or None,
+                        sample_rate = 44100,
+                        segment = 20,
+                        overlap = 10,
+                        cepstral_num = 40,
+                        N_filters = 50,
+                        ndim = 3, # number of dimension of the single elemnt in the output dataset,
+                        transpose = True,
+                        delta = True,
+                        delta_delta = True,
+                        verbose = 1,
+                        save_dataset_path = None,  #path to the folder to save the dataset,
+                        load_saved_dataset = None, #path to the folder to load the dataset
+                        cache_file = '', #path to the folder to cache the dataset or '' to cache in memory
+                        resize = False,
+                        new_height = 64,
+                        new_width = 128):
+
+    # set all seed
+    seed = 42
+    tf.random.set_seed(seed)
+    np.random.seed(seed)
+
+    #AUXILIARY FUNCTIONS
+    def load_audio(path):
+        # INPUT: the path of the audio file
+        # OUTPUT: the audio as a numpy array
+        path = path.numpy().decode("utf-8")
+        audio = librosa.load(path, sr = sample_rate)
+        return audio
+
+    def spectral_preprocessing(preprocessing, 
+                            audio, 
+                            sample_rate = 44100, 
+                            delta = delta, 
+                            delta_delta = delta_delta,
+                            segment = segment,
+                            overlap = overlap,
+                            cepstral_num = cepstral_num,
+                            N_filters = N_filters):
+        
+                            
+            audio = audio.numpy()
+
+            # transform the segment and overlapping from ms to samples
+            nperseg = round(sample_rate * segment / 1000)
+            noverlap = round(sample_rate * overlap / 1000)
+            n_fft = round(sample_rate * segment / 1000)
+            hop_length = nperseg - noverlap
+
+
+            # using librosa to perform the preprocessing
+            if preprocessing == "STFT":
+                stft_librosa = librosa.stft(audio, hop_length=hop_length, win_length=nperseg, n_fft=n_fft)
+                r = librosa.amplitude_to_db(np.abs(stft_librosa), ref=np.max)
+
+            elif preprocessing == "MEL":
+                mel_y = librosa.feature.melspectrogram(y=audio, sr=sample_rate, n_fft=n_fft, hop_length=hop_length,
+                                                    win_length=nperseg) 
+                r = librosa.power_to_db(mel_y, ref=np.max)
+            elif preprocessing == "MFCC":
+                mfcc_y = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=cepstral_num, n_fft=n_fft,
+                                            hop_length=hop_length, htk=True, fmin=40, n_mels=N_filters)
+
+                # now we calculate the delta and delta-delta if needed
+                if delta:
+                    delta_mfccs = librosa.feature.delta(mfcc_y)
+                    if delta_delta:
+                        delta2_mfccs = librosa.feature.delta(mfcc_y, order=2)
+                    if delta and not delta_delta:
+                        mfccs_features = np.concatenate((mfcc_y, delta_mfccs))
+                    elif delta and delta_delta:
+                        mfccs_features = np.concatenate((mfcc_y, delta_mfccs, delta2_mfccs))
+                if not delta and not delta_delta:
+                    mfccs_features = mfcc_y
+                r = mfccs_features
+
+            return r
+
+    def find_max_lazy(dataset, labels = labeled, verbose = verbose):
+        
+            max = 0
+            lazy_number = 4
+            if labels:
+                for audio, label in dataset.take(lazy_number):
+                    new = tf.reduce_max(tf.abs(audio)) 
+                    if new > max:
+                        max = new
+                if verbose > 0:
+                    print(f'The max value is {max}')
+            else:
+                for audio in dataset.take(lazy_number):
+                    new = tf.reduce_max(tf.abs(audio)) 
+                    if new > max:
+                        max = new
+                if verbose > 0:
+                    print(f'The max value is {max}')  
+                    
+            return 1, None 
+            #return max.numpy(), audio.numpy()
+
+    def save_dataset(dataset, save_file):
+        if save_file:
+            save_dir = os.path.dirname(save_file)
+            #check if the directory exists
+            if not os.path.exists(save_dir):
+                os.mkdir(save_dir)
+            else:
+                #check if the file exists
+                if os.path.exists(save_file):
+                    shutil.rmtree(save_file)
+
+            dataset.save(save_file)
+            if verbose>0:
+                print(f"Dataset saved in {save_file}")
+        return dataset
+
+    def laod_dataset(dataset_path):
+        dataset = tf.data.Dataset.load(dataset_path)
+        return dataset
+    
+    def reshape(audio, ndim = ndim, preprocessing = preprocessing, verbose = verbose, tranpose = transpose):
+        if preprocessing is not None:
+            if ndim == 2:
+                audio = tf.squeeze(audio) 
+                if transpose:
+                    audio = tf.transpose(audio)
+            elif ndim == 3:
+                audio = tf.squeeze(audio)
+                if transpose:
+                    audio = tf.transpose(audio)
+                audio = tf.expand_dims(audio, axis=2)
+            if not ndim in [2,3]:
+                raise ValueError(f'ndim must be 2 or 3, not {ndim}')
+        else:
+            if ndim == 1:
+                audio = tf.squeeze(audio)
+            elif ndim == 2:
+                audio = tf.expand_dims(audio, axis=1)
+            if not ndim in [1,2]:
+                raise ValueError(f'ndim must be 1 or 2, not {ndim}')
+        return audio
+
+    def resize_images(image, new_height = new_height, new_width = new_width):
+        # INPUT: the audio preprocessed by STFT, MEL or MFCC
+        # OUTPUT: the audio reshaped as a tensor (needed for the convolutional layers)
+        image = tf.image.resize(image, [new_height, new_width])
+        return image
+
+    #load save dataset if available
+    if load_saved_dataset is not None:
+        dataset = laod_dataset(load_saved_dataset)
+        dataset = dataset.cache(filename = cache_file).shuffle(dataset.cardinality().numpy(), reshuffle_each_iteration=True).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+        return dataset
+
+    # dataset creation
+    (file_path,labels) = (data_frame.full_path, pd.get_dummies(data_frame.category))
+    dataset = tf.data.Dataset.from_tensor_slices((file_path, labels))
+    dataset  = dataset.map(lambda path, label: (tf.py_function(func=load_audio, inp=[path], Tout=tf.float32), label))
+    
+    # spectral preprocessing and resizing
+    flag = True
+    if preprocessing is not None:
+        if verbose > 0:
+            print(f'Preprocessing: {preprocessing}')
+        if labeled:
+            dataset = dataset.map(lambda audio, label: (tf.py_function(func=spectral_preprocessing, inp=[preprocessing,audio], Tout=tf.float32), label),
+                            num_parallel_calls=tf.data.AUTOTUNE,
+                            deterministic=False)
+            if resize:
+                if verbose > 0:
+                    print(f'Resizing with shape: {new_height}x{new_width}')
+
+                #correct the number of dimensions to 3 in case of resizing (ndim must be 3)
+                dataset = dataset.map(lambda audio, label: (tf.py_function(func = reshape, inp = [audio], Tout = tf.float32), label), 
+                            num_parallel_calls=tf.data.AUTOTUNE, 
+                            deterministic = False)
+                flag = False
+                
+                dataset = dataset.map(lambda audio, label: (tf.py_function(func=resize_images, inp=[audio], Tout=tf.float32), label),
+                            num_parallel_calls=tf.data.AUTOTUNE,
+                            deterministic=False)
+        else:
+            dataset = dataset.map(lambda audio: tf.py_function(func=spectral_preprocessing, inp=[preprocessing,audio], Tout=tf.float32),
+                            num_parallel_calls=tf.data.AUTOTUNE,
+                            deterministic=False)
+            if resize:
+                if verbose > 0:
+                    print(f'Resizing with shape: {new_height}x{new_width}')
+
+                #correct the number of dimensions to 3 in case of resizing (ndim must be 3)
+                dataset = dataset.map(lambda audio: tf.py_function(func = reshape, inp = [audio], Tout = tf.float32),
+                            num_parallel_calls=tf.data.AUTOTUNE, 
+                            deterministic = False)
+                flag = False
+                dataset = dataset.map(lambda audio: tf.py_function(func=resize_images, inp=[audio], Tout=tf.float32),
+                            num_parallel_calls=tf.data.AUTOTUNE,
+                            deterministic=False)
+        
+    #normalization
+    max, example_audio = find_max_lazy(dataset)
+    if labeled:
+        dataset = dataset.map(lambda audio, label: (audio/max, label), num_parallel_calls=tf.data.AUTOTUNE, deterministic = False)
+    else:
+        dataset = dataset.map(lambda audio: audio/max, num_parallel_calls=tf.data.AUTOTUNE, deterministic = False)    
+
+    #adjust the shape of the elements in the dataset:
+    if flag:
+        if labeled:
+            dataset = dataset.map(lambda audio, label: (tf.py_function(func = reshape, inp = [audio], Tout = tf.float32), label), 
+                            num_parallel_calls=tf.data.AUTOTUNE, 
+                            deterministic = False)
+        else:
+            dataset = dataset.map(lambda audio: tf.py_function(func = reshape, inp = [audio], Tout = tf.float32),
+                                num_parallel_calls=tf.data.AUTOTUNE, 
+                                deterministic = False)
+
+    # save the dataset in a path
+    if save_dataset_path is not None:
+        dataset = save_dataset(dataset, save_dataset_path)
+
+    # final rutine
+    dataset = dataset.cache(filename = cache_file)
+    #dataset = dataset.shuffle(dataset.cardinality().numpy(), reshuffle_each_iteration=True)
+    dataset = dataset.batch(batch_size)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE) 
+    if labeled is not None:
+        return dataset, labels
+
+
+def example_batch(train, val= None, test = None, label_names=None, 
+                  verbose=1,
+                  show_figure = True,
+                  check_val_test = False,
+                  listen_to_audio = True,):
+    if verbose == 0:
+        show_figure = False
+        check_val_test = False
+        listen_to_audio = False
+
+    for example_train_batch, label in train.take(1):
+        if verbose > 0:
+            print(f'Audio shape: {example_train_batch.shape}')
+            if label_names is not None:
+                print(f'Label shape: {label.shape}')
+                print(f'Label: {label_names[np.where(label.numpy()[0]==1)[0][0]]}')
+        INPUT_DIM = example_train_batch.shape[1:]
+        if (len(INPUT_DIM) == 1 or (INPUT_DIM[-1]==1 and len(INPUT_DIM)==2)) and show_figure:
+            plt.subplots(1, 1, figsize=(9, 5))
+            plt.tight_layout(pad=3)
+            plt.plot(example_train_batch[0].numpy())
+            if label_names is not None:
+                plt.title('Audio wave plot of class: '+label_names[np.where(label.numpy()[0]==1)[0][0]])
+            else:
+                plt.title('Audio wave plot')
+        elif len(INPUT_DIM) > 1 and show_figure:
+            plt.figure(figsize=(10, 4))
+            plt.imshow(example_train_batch[0].numpy(), aspect = 'auto')
+            plt.colorbar()
+            if label_names is not None:
+                plt.title(f'Spectrogram of class {label_names[np.where(label.numpy()[0]==1)[0][0]]}')
+            else:
+                plt.title('Spectrogram')
+
+        if len(INPUT_DIM) == 1 and listen_to_audio:
+            display(ipd.Audio(example_train_batch[0].numpy(), rate=44100))
+
+    if check_val_test and val is not None and test is not None:
+        for example_val_batch, label in val.take(1):
+            print(f'Audio shape in validation : {example_val_batch.shape}')
+            print(f'Label shape in validation : {label.shape}')
+
+        for example_test_batch, label in test.take(1):
+            print(f'Audio shape in test : {example_test_batch.shape}')
+            print(f'Label shape in test : {label.shape}')
+    if label_names is not None:
+        return INPUT_DIM, len(label_names)
+    else:
+        return INPUT_DIM
+
+
+def K_fold_training(dataset, build_model, 
+                    params = {},
+                    K = 5,
+                    epochs=2, 
+                    verbose = 2,
+                    patience = 10,
+                    **kwargs):
+        
+    callbacks_loss = [tf.keras.callbacks.EarlyStopping(monitor='loss', 
+                                                      mode='auto', 
+                                                      verbose=verbose,
+                                                      patience=patience)]
+    callback_acc = [tf.keras.callbacks.EarlyStopping(monitor='accuracy',
+                                                    mode='auto',
+                                                    verbose=verbose,
+                                                    patience=patience)]
+
+    #build the keras-sklearn regressor
+    #temp_params = {key_param:params[key_params][0] for key_param in params.keys()}
+
+    model = KerasClassifier(model = build_model, epochs = epochs, verbose = verbose, callbacks = [callbacks_loss,callback_acc], **params)
+
+    def my_custom_loss_func(y_true, y_pred, verbose = verbose):
+        y_pred = np.argmax(y_pred, axis=1)
+        y_true = np.argmax(y_true, axis=1)
+        if verbose > 0:
+            pass
+        print(f'accuracy on test for this fold is {accuracy_score(y_true, y_pred)}')
+        return accuracy_score(y_true, y_pred)
+    score = {'one_hot_accuracy':make_scorer(my_custom_loss_func, greater_is_better=True)}
+
+    grid_search = GridSearchCV(estimator = model, param_grid = params, cv=K, verbose=verbose, scoring = score, refit=False)
+
+    #extract X and y from the dataset
+    X = np.concatenate([x for x, y in dataset], axis=0)
+    print(X.shape)
+    y = np.concatenate([y for x, y in dataset], axis=0)
+    print(y.shape)
+
+    #train a k-fold cross validation
+    model_cv = grid_search.fit(X, y)
+    result = pd.DataFrame( pd.DataFrame(model_cv.cv_results_, index = model_cv.cv_results_['params']).mean_test_one_hot_accuracy)
+    result.columns = ['mean_accuracy']
+    best_params = result.index[np.argmax(result.mean_accuracy)]
+
+    if verbose > 0:
+        print(f'The best parameters are {best_params}')
+        print(f'The accuracy score are')
+
+    result = result.sort_values(by='mean_accuracy', ascending=False)
+    
+    display(result)
+
+    return model_cv, result, best_params
+
+
+def compile_and_fit(model, train_data, val_data, 
+                    loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True), 
+                    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=1e-3) if sys.platform == 'darwin' else tf.keras.optimizers.Adam(learning_rate=1e-3), 
+                    metrics = ['accuracy'],
+                    patience = 5,
+                    epochs = 10,
+                    steps_per_epoch = None,
+                    verbose = 1,
+                    model_filename = None):
+    
+    if verbose > 0:
+        model.summary()
+    
+    model.compile(optimizer=optimizer,
+                  loss=loss,
+                  metrics=metrics)
+    
+    if model_filename is not None:
+        callbacks = [tf.keras.callbacks.EarlyStopping(verbose=verbose, patience=patience),
+                     ModelSaveCallback(model_filename)]
+        #cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,save_weights_only=True,verbose=1)
+
+    else:
+        callbacks = [tf.keras.callbacks.EarlyStopping(monitor='val_'+metrics[0], 
+                                                      mode='max', 
+                                                      verbose=verbose,
+                                                      restore_best_weights=True, 
+                                                      patience=patience)]
+    
+    history = model.fit(train_data,
+                        epochs=epochs,
+                        validation_data=val_data,
+                        callbacks=callbacks,
+                        steps_per_epoch = steps_per_epoch,
+                        verbose=verbose)
+    return model, history
+
+@tf.autograph.experimental.do_not_convert
+def compile_fit_evaluate(data_frame, model, train, val, test, label_names=None,
+                         load_model = False,
+                         model_path = None,
+                         loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True), 
+                         optimizer =tf.keras.optimizers.legacy.Adam(learning_rate=1e-3) if sys.platform == 'darwin' else tf.keras.optimizers.Adam(learning_rate=1e-3), 
+                         metrics = ['accuracy'],
+                         patience = 5,
+                         epochs = 10,
+                         steps_per_epoch = None,
+                         verbose = 1,
+                         show_history = True,
+                         show_test_evaluation = True,
+                         show_confusion_matrix = True,
+                         listen_to_wrong = True,
+                         save_the_model = False,
+                         name_model = None,
+                         save_weights_only = False,
+                         save_format = 'tf',
+                         save_best_only = True,
+                         model_filename = None,
+                         ):
+    if load_model:
+        if model_path is None:
+            print("You need to specify the path to load the model")
+        else:
+            model = tf.keras.models.load_model(model_path)
+
+    model,history = compile_and_fit(model, train, val,
+                                    optimizer=optimizer,
+                                    loss=loss,  
+                                    metrics=metrics,
+                                    patience=patience,
+                                    epochs=epochs,
+                                    steps_per_epoch=steps_per_epoch,
+                                    verbose=verbose,
+                                    model_filename=model_filename)
+
+    if show_history:
+        plot_history(history)
+
+    if show_test_evaluation:
+        scores = model.evaluate(test, return_dict=True)
+        display(scores)
+
+    if show_confusion_matrix:
+        #predict the test set
+        y_pred = model.predict(test)
+        y_pred = tf.argmax(y_pred, axis=1)
+
+        y_true = tf.concat(list(test.map(lambda s,lab: lab)), axis=0)
+        y_true = tf.argmax(y_true,axis=1)
+
+        #confusion matrix
+        confusion_mtx = confusion_matrix(y_true, y_pred, label_names)
+
+    if listen_to_wrong:
+        listen_to_wrong_audio(data_frame, y_true, y_pred, label_names, confusion_mtx)
+
+    if save_the_model:
+        if name_model is None:
+            print("You need to specify the path to save the model")
+        else:
+            path_to_save = os.path.join(main_dir,'models',name_model)
+            if save_weights_only:
+                model.save_weights(path_to_save, save_format=save_format)
+            else:
+                model.save(path_to_save, save_format=save_format, save_best_only=save_best_only)
+
+    if show_confusion_matrix:
+        if show_test_evaluation:
+            return model, history, confusion_mtx, scores
+        
+    else:
+        return model, history
+    
+@tf.autograph.experimental.do_not_convert
+def get_model_size(model):
+    temp_file = "temp_model.h5"
+    model.save(temp_file)
+    size_mb = os.path.getsize(temp_file) / (1024 * 1024)  # Size in megabytes
+    os.remove(temp_file)
+    return size_mb
+
+@tf.autograph.experimental.do_not_convert
+def count_parameters(model):
+    trainable_params = sum(tf.keras.backend.count_params(p) for p in model.trainable_variables)
+    non_trainable_params = sum(tf.keras.backend.count_params(p) for p in model.non_trainable_variables)
+    total_params = trainable_params + non_trainable_params
+    return total_params
+
+
+def build_tuner(build_model, # A function that takes hyperparameters as inputs and returns a Keras model to be optimized.
+                hpo_method, # A string specifying the HPO method to use. Options: "RandomSearch", "Hyperband", "BayesianOptimization".
+                max_model_size, # Maximum allowed model size in terms of trainable parameters.
+                dir_name, # Directory path where the tuner's results and checkpoints will be stored.
+                objective, #  The objective to be optimized during HPO. It can be a Keras Tuner `Objective` or a custom function.
+                not_fixed_param='', # A string specifying a hyperparameter (if any) that will not be tuned in this search. Default is None.
+                hp=None, # A Keras Tuner `HyperParameters` instance that specifies the hyperparameters to be tuned in the search. Default is None.
+                overwrite=True, # Boolean flag indicating whether to overwrite previous results in the directory or resume the previous search. Default is True.
+                max_trials=4, # Maximum number of hyperparameter configurations to test during the HPO process. Default is 4.
+                seed=42, # Seed for reproducibility. Default is 42.
+                max_consecutive_failed_trials=50, # Maximum number of consecutive failed trials before the search stops. Default is 5.
+                executions_per_trial=1, # Number of times to train the model for each hyperparameter configuration. Default is 1 (single round of training).
+                tune_new_entries=True # Boolean flag indicating whether to allow tuning unlisted parameters. Default is True.
+                ):
+    """
+    Returns:
+        tuner: A Keras Tuner instance corresponding to the specified HPO method, with the specified hyperparameters and objective.
+    """
+
+    if hp is None:
+        name_params = '_full'
+    else:
+        name_params = '_' + not_fixed_param
+
+    if hpo_method == "RandomSearch":
+        # Using Random Search strategy for HPO
+        print(f'Using Random Search strategy for HPO')
+        tuner = kt.RandomSearch(hypermodel=build_model,
+                                hyperparameters=hp,  # Decide which hyperparameters to tune.
+                                tune_new_entries=tune_new_entries,  # If False prevents unlisted parameters from being tuned.
+                                objective=objective,
+                                directory=dir_name,
+                                overwrite=overwrite,
+                                project_name=hpo_method + name_params,
+                                max_trials=max_trials,
+                                seed=seed,
+                                max_model_size=max_model_size,
+                                executions_per_trial=executions_per_trial,
+                                max_consecutive_failed_trials=max_consecutive_failed_trials
+                                )
+    elif hpo_method == "Hyperband":
+        # Using Hyperband strategy for HPO
+        print(f'Using Hyperband strategy for HPO')
+        tuner = kt.Hyperband(hypermodel=build_model,
+                             objective=objective,
+                             max_epochs=10,  # Maximum number of epochs for each configuration in Hyperband.
+                             factor=3,  # Reduction factor to determine the number of configurations at each stage.
+                             directory=dir_name,
+                             overwrite=overwrite,
+                             project_name=hpo_method + name_params,
+                             seed=seed,
+                             max_model_size=max_model_size,
+                             executions_per_trial=executions_per_trial,
+                             hyperparameters=hp,  # Decide which hyperparameters to tune.
+                             tune_new_entries=tune_new_entries,  # If False prevents unlisted parameters from being tuned.
+                             max_consecutive_failed_trials=max_consecutive_failed_trials
+                             )
+
+    elif hpo_method == "BayesianOptimization":
+        # Using Bayesian Optimization strategy for HPO
+        print(f'Using Bayesian Optimization strategy for HPO')
+        tuner = kt.BayesianOptimization(hypermodel=build_model,
+                                        objective=objective,
+                                        max_trials=max_trials,  # Maximum candidates to test.
+                                        directory=dir_name,
+                                        overwrite=overwrite,
+                                        project_name=hpo_method + name_params,
+                                        seed=seed,
+                                        max_model_size=max_model_size,
+                                        executions_per_trial=executions_per_trial,
+                                        hyperparameters=hp,  # Decide which hyperparameters to tune.
+                                        tune_new_entries=tune_new_entries,  # If False prevents unlisted parameters from being tuned.
+                                        max_consecutive_failed_trials=max_consecutive_failed_trials
+                                        )
+
+    return tuner
+
+
+# little function
+def num(i):
+    if i<10:
+        return '0'+str(i)
+    else:
+            return str(i)
+    
+    
+#since we are going to use this several times we define a practical function
+def create_US_dataset(
+        preprocessing,
+        folder_number,
+        main_dir,
+        batch_size=128,
+        ndim = 3,
+        verbose = 0
+    ):
+    # create a dataset of spectrograms from the ESC-US dataset folder 1, resized
+    path_to_ogg_files = os.path.join(main_dir,'Data', 'ESC-US', num(folder_number))
+    num_files = len(os.listdir(path_to_ogg_files))
+    start_time = time.time()
+
+    if preprocessing is not None:
+        resize = True 
+
+        # WE SHOULD SPECIFY THE ndim OF THE SAVED DATASET
+        save_train_file = os.path.join(main_dir,'Saved_Datasets','US_'+num(folder_number)+'_'+preprocessing+'_train_ndim3_resized')
+        save_test_file = os.path.join(main_dir,'Saved_Datasets','US_'+num(folder_number)+'_'+preprocessing+'_test_ndim3_resized')
+        save_val_file = os.path.join(main_dir,'Saved_Datasets','US_'+num(folder_number)+'_'+preprocessing+'_val_ndim3_resized')
+        normalize = True
+    else:
+        #raw audio datsets are too big to save them
+        resize = False
+        save_train_file = None
+        save_test_file = None
+        save_val_file = None
+        normalize = False
+        
+    #create and save the dataset
+    print(f'Creating the dataset from folder {num(folder_number)}')
+    train, val, test, INPUT_DIM = create_dataset(path_to_ogg_files,
+                                        batch_size=batch_size,
+                                        verbose = 0,
+                                        labels = None, #must specify this for unsupervised learning
+                                        preprocessing=preprocessing,
+                                        show_example_batch = True,
+                                        ndim = ndim,
+                                        save_train = save_train_file, 
+                                        save_test = save_test_file,
+                                        save_val = save_val_file,
+                                        transpose=False,
+                                        resize = resize,
+                                        normalize = normalize
+                                        )
+    
+    if verbose > 0:
+        print(f'Create the dataset with {num_files} files requires {round(time.time()-start_time,2)} seconds.')
+    
+    return train, val, test, INPUT_DIM
+
+verbose=0
+main_dir = os.getcwd()
+def US_training(AE_name,
+                autoencoder,
+                n_folders,
+                epochs = 50,
+                preprocessing = None,
+                patience=10,
+                verbose = 0,
+                ndim = 3,
+                metrics = ['mse'],
+                ):
+
+    #paramteres for the fit and callbacks
+    callbacks = [tf.keras.callbacks.EarlyStopping(monitor='val_'+metrics[0],
+                                                mode='max',
+                                                verbose=verbose,
+                                                restore_best_weights=True,
+                                                patience=patience)]
+
+    #read the file txt to know the folder to start 
+    with open(os.path.join(main_dir,'Saved_Models',AE_name+'_count.txt'), 'r') as file:
+        last_folder = int(file.read())
+        print(f'Last folder trained: {last_folder}')
+
+    if n_folders < last_folder:
+        print('The number of folders is smaller than the last folder trained!')
+        n_folders = last_folder
+    
+
+    for i in range(last_folder+1,n_folders+1):
+
+        #load the model if i > 1
+        if i>1:
+            autoencoder = tf.keras.models.load_model(os.path.join(main_dir,'Saved_Models',AE_name))
+
+        #create the dataset
+        train, val, test, INPUT_DIM =  create_US_dataset(folder_number=i,
+                                                        preprocessing = preprocessing,
+                                                        ndim = ndim,
+                                                        main_dir = main_dir,
+                                                        )
+        
+        #fit the autoencoder
+        history = autoencoder.fit(train, validation_data= val, epochs=epochs, callbacks = callbacks, verbose=0)
+
+        #save the model
+        autoencoder.save(os.path.join(main_dir,'Saved_Models',AE_name), save_format  ='keras')
+
+        #show the best epoch
+        val_acc_per_epoch = history.history['val_'+metrics[0]]
+        best_epoch = val_acc_per_epoch.index(max(val_acc_per_epoch)) + 1
+        if verbose > 0:
+            print('Best epoch: %d' % (best_epoch,))
+        
+        if verbose > 1:
+            #plot the history of the training
+            plot_history(history)
+
+            #evaluate the model on the test set
+            scores = autoencoder.evaluate(test, return_dict=False)
+            display(scores)
+
+
+        #update the number on the txt file overwritting the previous one
+        with open(os.path.join(main_dir,'Saved_Models',AE_name+'_count.txt'), 'w') as file:
+            file.write(str(i))
+
+    # retrive the size of the model
+    print(f"This model has a size of {get_model_size(autoencoder)} MB")
+     
+    return autoencoder
+
+
+def create_masked_dataset(dataset_path, batch_size = 30, normalize = True, verbose = 0, resize = True):
+    #load the dataset 
+    dataset = tf.data.Dataset.load(dataset_path)
+
+    # normalize the dataset
+    max = 0
+    lazy_number = 4
+    for audio, label in dataset.take(lazy_number):
+        new = tf.reduce_max(tf.abs(audio)) 
+        if new > max:
+            max = new
+    max = max.numpy()
+    if verbose > 0:
+        print(f'The max value is {max}')
+
+    if normalize:
+        dataset = dataset.map(lambda x,y: (x/max,y))
+
+    def resize_images(image, new_height = 64, new_width = 128):
+        # INPUT: the audio preprocessed by STFT, MEL or MFCC
+        # OUTPUT: the audio reshaped as a tensor (needed for the convolutional layers)
+        image = tf.image.resize(image, [new_height, new_width])
+        return image
+    
+    if resize: 
+        dataset = dataset.map(lambda x,y: (tf.py_function(func=resize_images, inp=[x], Tout=tf.float32),y))
+    
+    # create batches
+    dataset = dataset.batch(batch_size)
+    
+    return dataset
+
+def create_masked_dataset_AE(dataset_path, batch_size = 30, normalize = True, verbose = 0, val_split = 0.25, resize = True):
+    #load the dataset 
+    dataset = tf.data.Dataset.load(dataset_path)
+
+    # normalize the dataset
+    max = 0
+    lazy_number = 4
+    for audio, label in dataset.take(lazy_number):
+        new = tf.reduce_max(tf.abs(audio)) 
+        if new > max:
+            max = new
+    max = max.numpy()
+    if verbose > 0:
+        print(f'The max value is {max}')
+
+    if normalize:
+        dataset = dataset.map(lambda x,y: (x/max,y))
+    
+    def resize_images(image, new_height = 64, new_width = 128):
+        # INPUT: the audio preprocessed by STFT, MEL or MFCC
+        # OUTPUT: the audio reshaped as a tensor (needed for the convolutional layers)
+        image = tf.image.resize(image, [new_height, new_width])
+        return image
+    
+    if resize: 
+        dataset = dataset.map(lambda x,y: (tf.py_function(func=resize_images, inp=[x], Tout=tf.float32),y))
+
+    # map the first element of the train dataset over the second and overwrite it
+    # we do it in order to have the same input and output for the autoencoder
+    dataset = dataset.map(lambda x, y: (x, x))
+    
+    # create batches
+    dataset = dataset.batch(batch_size)
+
+    # split the dataset in train and validation
+    train = dataset.skip(int(dataset.cardinality().numpy() * val_split))
+    val_test = dataset.take(int(dataset.cardinality().numpy() * val_split))
+    val = val_test.take(int(val_test.cardinality().numpy() / 2))
+    test = val_test.skip(int(val_test.cardinality().numpy() / 2))
+    
+    return train, val, test
+
+
+def Masked_AE_training(AE_name,
+                autoencoder,
+                n_folders,
+                epochs = 50,
+                patience=10,
+                verbose = 0,
+                ndim = 3,
+                metrics = ['mse'],
+                ):
+
+    #paramteres for the fit and callbacks
+    callbacks = [tf.keras.callbacks.EarlyStopping(monitor='val_'+metrics[0],
+                                                mode='max',
+                                                verbose=verbose,
+                                                restore_best_weights=True,
+                                                patience=patience)]
+
+    #read the file txt to know the folder to start 
+    with open(os.path.join(main_dir,'Saved_Models',AE_name+'_count.txt'), 'r') as file:
+        last_folder = int(file.read())
+        print(f'Last folder trained: {last_folder}')
+
+    if n_folders < last_folder:
+        print('The number of folders is smaller than the last folder trained!')
+        n_folders = last_folder
+    
+
+    for i in range(last_folder+1,n_folders+1):
+
+        #load the model if i > 1
+        if i>1:
+            autoencoder = tf.keras.models.load_model(os.path.join(main_dir,'Saved_Models',AE_name))
+
+        #create the dataset
+
+        dataset_path = os.path.join(main_dir,'Saved_Datasets','masked_dataset',num(i))
+        
+        train, val, test = create_masked_dataset_AE(dataset_path,
+                                                    normalize = True,
+                                                    verbose = verbose, 
+                                                    val_split = 0.25)
+        
+        #fit the autoencoder
+        history = autoencoder.fit(train, validation_data= val, epochs=epochs, callbacks = callbacks, verbose=0)
+
+        #save the model
+        autoencoder.save(os.path.join(main_dir,'Saved_Models',AE_name), save_format  ='keras')
+
+        #show the best epoch
+        val_acc_per_epoch = history.history['val_'+metrics[0]]
+        best_epoch = val_acc_per_epoch.index(max(val_acc_per_epoch)) + 1
+        if verbose > 0:
+            print('Best epoch: %d' % (best_epoch,))
+        
+        if verbose > 1:
+            #plot the history of the training
+            plot_history(history)
+
+            #evaluate the model on the test set
+            scores = autoencoder.evaluate(test, return_dict=False)
+            display(scores)
+
+
+        #update the number on the txt file overwritting the previous one
+        with open(os.path.join(main_dir,'Saved_Models',AE_name+'_count.txt'), 'w') as file:
+            file.write(str(i))
+
+    # retrive the size of the model
+    print(f"This model has a size of {get_model_size(autoencoder)} MB")
+     
+    return autoencoder

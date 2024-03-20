@@ -1,0 +1,99 @@
+!note: all accuracies are given on 50 classes
+
+2.2.2 Fully Connected - Raw Audio - 50 classes
+14,126,834 parameters
+train_accuracy: 0.8667  - val_accuracy: 0.0640 - test_accuracy: 0.0440
+
+2.3.1 CNN - STFT Preprocessed Audio
+1,341,234 parameters - 16.6 MB
+train_accuracy: 0.9800 - val_accuracy: 0.5080 - test_accuracy: 0.5240
+
+2.3.1 CNN - STFT Preprocessed Audio -> Augmented 
+1,341,234 parameters - 16.6 MB
+train_accuracy  ? - val_accuracy: ? - test_accuracy: 0.8960 (dai grafici sembra che la train sia 100% e la val sia 86%)
+
+2.3.2 CNN - MEL Preprocessed Audio
+476,722 parameters - 5.9 MB
+train_accuracy: 0.9827 - val_accuracy: 0.4600 - test_accuracy: 0.4840
+
+2.3.3 CNN - MFCC Preprocessed Audio (with delta delta)
+2,633,778 parameters - 31.8 MB
+train_accuracy: 0.9980 - val_accuracy: 0.5840 - test_accuracy: 0.5400
+
+2.4.5 RNN - GRU - with STFT audio preprocessed - 50 classes
+116,018 parameters - ? MB
+train_accuracy: 0.5380 - val_accuracy: 0.2760 - test_accuracy: 0.3200
+
+2.4.6 GRU with MFCC audio preprocessed - 50 classes
+29,170 parameters - ? MB
+train_accuracy: 0.5467 - val_accuracy: 0.3120 - test_accuracy: 0.3280
+
+3.1 AE on raw audio - Dense FFNN
+28,450,372 parameters - 341.8 MB
+
+3.2 Autoencoder on preprocessed audio - Convolutional and flatten code - MFCC
+56,753 parameters -  1.2 MB
+
+3.2 Autoencoder on preprocessed audio - Convolutional and flatten code  - STFT
+190,117 parameters  - 1.6 MB
+
+3.3 Autoencoder on preprocessed audio - Fully Convolutional AE - MFCC
+2,055 parameters - 0.369 MB
+
+3.3 Autoencoder on preprocessed audio - Fully Convolutional AE - STFT
+2,644 parameters - 0.770 MB
+
+4.1 Classification on encoded raw audio 
+Using Dense AE FFNN as encoder + GRU 
+Total params: 14,115,298
+Trainable params: 354
+Non-trainable params: 14,114,944
+train_accuracy: 0.19 (dal grafico) - val_accuracy: 0.16 - test_accuracy: 0.1600
+181 MB
+
+4.2 Classification on encoded spectrograms - RNN - STFT
+Using Conv prep flatten STFT as encoder + GRU
+Total params: 2,417,650
+Trainable params: 2,367,282
+Non-trainable params: 50,368
+train_accuracy: 0.2373 - val_accuracy: 0.1680 - test_accuracy: 0.2120
+31 MB
+
+4.2 Classification on encoded spectrograms - RNN - MFCC
+Using AE_Conv_prep_flatten_MFCC as encoder + GRU
+Total params: 2,387,522
+Trainable params: 2,367,282
+Non-trainable params: 20,240
+train_accuracy: 0.1753 - val_accuracy: 0.1360 - test_accuracy: 0.1400
+29.8 MB
+
+4.3 Classification on encoded spectrograms - CNN - STFT
+Using Fully_convolutiona_AE_STFT as encoder + CNN
+Total params: 56,848
+Trainable params: 47,730
+Non-trainable params: 9,118
+train_accuracy: 0.5880 - val_accuracy: 0.3080 - test_accuracy: 0.3280
+1.1 MB
+
+4.3 Classification on encoded spectrograms - CNN - MFCC
+Using Fully_Convolutional_AE_MFCC as encoder + CNN
+Total params: 152,056
+Trainable params: 150,642
+Non-trainable params: 1,414
+train_accuracy: 0.7833 - val_accuracy: 0.1960 - test_accuracy: 0.2200
+2.2 MB
+
+4.4 STFT input, flatten code
+Using SVM_encoder_classifier_flat_code_STFT as encoder
+train_accuracy: 77.53%, test_accuracy: 25.80%
+0.982 MB
+
+4.4 MFCC input, flatten code 
+Using SVM_encoder_classifier_flat_code_MFCC as encoder + SVM
+train_accuracy: 46.60%, test_accuracy: 16.40% 
+0.995 MB 
+
+4.4 STFT input, flatten code, SSIM loss for the AE
+Using AE_Conv_prep_flatten_STFT_code_size_32_ssim as encoder + SVM
+train_accuracy: 100%, test_accuracy: 20.20%
+0.991 MB

@@ -1,0 +1,9 @@
+https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/YDEPUT&version=2.0 
+
+tar -xvzf ESC-US-01.tar.gz -C C:/Users/latta/GitHub/Human_Data_Analytics_Project_2023/data
+
+
+In Mac use 
+Cd Downloads
+for file in ESC-US-*.tar.gz; do tar -xzvf "$file"; done
+

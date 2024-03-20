@@ -1,0 +1,26 @@
+
+LogisticRegression
+The grid search for the model LogisticRegression requires 169.18 minutes.
+Best params for model LogisticRegression are:{'Classifier__C': 0.1, 'Classifier__fit_intercept': True, 'MFCC__kw_args': {'mfcc': 30, 'n': 40}}
+LogisticRegression Accuracy on ESC10 training set	: 1.0
+LogisticRegression Accuracy on ESC10 test set	: 0.65
+SVC
+The grid search for the model SVC requires 454.33 minutes.
+Best params for model SVC are:{'Classifier__C': 1, 'Classifier__degree': 3, 'Classifier__gamma': 1, 'Classifier__kernel': 'poly', 'MFCC__kw_args': {'mfcc': 10, 'n': 80}}
+SVC Accuracy on ESC10 training set	: 1.0
+SVC Accuracy on ESC10 test set	: 0.65
+DecisionTreeClassifier
+The grid search for the model DecisionTreeClassifier requires 235.19 minutes.
+Best params for model DecisionTreeClassifier are:{'Classifier__max_depth': 5, 'Classifier__min_samples_leaf': 8, 'Classifier__min_samples_split': 2, 'MFCC__kw_args': {'mfcc': 10, 'n': 160}}
+DecisionTreeClassifier Accuracy on ESC10 training set	: 0.7733333333333333
+DecisionTreeClassifier Accuracy on ESC10 test set	: 0.38
+RandomForestClassifier
+The grid search for the model RandomForestClassifier requires 104.56 minutes.
+Best params for model RandomForestClassifier are:{'Classifier__criterion': 'gini', 'Classifier__max_depth': None, 'Classifier__min_samples_leaf': 3, 'Classifier__n_estimators': 150, 'MFCC__kw_args': {'mfcc': 50, 'n': 120}}
+RandomForestClassifier Accuracy on ESC10 training set	: 0.9966666666666667
+RandomForestClassifier Accuracy on ESC10 test set	: 0.63
+KNeighborsClassifier
+The grid search for the model KNeighborsClassifier requires 67.98 minutes.
+Best params for model KNeighborsClassifier are:{'Classifier__n_neighbors': 8, 'Classifier__p': 1, 'Classifier__weights': 'distance', 'MFCC__kw_args': {'mfcc': 10, 'n': 40}}
+KNeighborsClassifier Accuracy on ESC10 training set	: 1.0
+KNeighborsClassifier Accuracy on ESC10 test set	: 0.66

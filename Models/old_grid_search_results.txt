@@ -1,0 +1,644 @@
+LOGISTIC REGRESSION
+
+
+# RESULT OF THE GRID SEARCH OVER THE CEPSTRAL COEFFICIENTS NUMBER
+'''USING 10 MFCC WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 10-MFCC requires 11.975822925567627
+(Logistic Regression) Accuracy on training set with 10 MFCC. 	: 1.0
+(Logistic Regression) Accuracy on test set with 10 MFCC.	: 0.66
+
+USING 20 MFCC WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC requires 30.938884019851685
+(Logistic Regression) Accuracy on training set with 20 MFCC. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20 MFCC.	: 0.7
+
+USING 30 MFCC WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 30-MFCC requires 37.03817319869995
+(Logistic Regression) Accuracy on training set with 30 MFCC. 	: 1.0
+(Logistic Regression) Accuracy on test set with 30 MFCC.	: 0.66
+
+USING 40 MFCC WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 40-MFCC requires 27.13124966621399
+(Logistic Regression) Accuracy on training set with 40 MFCC. 	: 1.0
+(Logistic Regression) Accuracy on test set with 40 MFCC.	: 0.66
+
+USING 50 MFCC WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 50-MFCC requires 42.25108599662781
+(Logistic Regression) Accuracy on training set with 50 MFCC. 	: 1.0
+(Logistic Regression) Accuracy on test set with 50 MFCC.	: 0.65'''
+
+#RESULT OF THE GRID SEARCH OVER THE FILTER BANK NUMBER
+'''USING 10 FILTERS WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 10 filters requires 7.930636644363403
+(Logistic Regression) Accuracy on training set with 20-MFCC and 10 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 10 filters.	: 0.66
+
+USING 20 FILTERS WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 20 filters requires 20.318443059921265
+(Logistic Regression) Accuracy on training set with 20-MFCC and 20 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 20 filters.	: 0.67
+
+USING 40 FILTERS WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 40 filters requires 19.737472534179688
+(Logistic Regression) Accuracy on training set with 20-MFCC and 40 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 40 filters.	: 0.7
+
+USING 60 FILTERS WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 60 filters requires 32.337871074676514
+(Logistic Regression) Accuracy on training set with 20-MFCC and 60 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 60 filters.	: 0.69
+
+USING 80 FILTERS WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 80 filters requires 25.291279792785645
+(Logistic Regression) Accuracy on training set with 20-MFCC and 80 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 80 filters.	: 0.7
+
+USING 100 FILTERS WE HAVE:
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 100 filters requires 15.517470598220825
+(Logistic Regression) Accuracy on training set with 20-MFCC and 100 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 100 filters.	: 0.72
+
+USING 160 FILTERS WE HAVE:
+/usr/local/lib/python3.10/dist-packages/librosa/feature/spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. 
+Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels. 
+Fit the logistic regression on the ESC10 dataset with 20-MFCC and 160 filters requires 33.43711471557617
+(Logistic Regression) Accuracy on training set with 20-MFCC and 160 filters. 	: 1.0
+(Logistic Regression) Accuracy on test set with 20-MFCC and 160 filters.	: 0.73
+
+'''
+
+
+
+
+SVM
+
+'''
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 10 MFCC and 40 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 10 MFCC and 40 filters is 0.7500000000000001
+(SVM) Accuracy on training set with 10 MFCC and 40 filters. 	: 0.91
+(SVM) Accuracy on test set with 10 MFCC and 40 filters.	: 0.73
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 10 MFCC and 80 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 10 MFCC and 80 filters is 0.7633333333333334
+(SVM) Accuracy on training set with 10 MFCC and 80 filters. 	: 0.91
+(SVM) Accuracy on test set with 10 MFCC and 80 filters.	: 0.72
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 10 MFCC and 120 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 10 MFCC and 120 filters is 0.76
+(SVM) Accuracy on training set with 10 MFCC and 120 filters. 	: 0.8933333333333333
+(SVM) Accuracy on test set with 10 MFCC and 120 filters.	: 0.72
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 10 MFCC and 160 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 10 MFCC and 160 filters is 0.7266666666666668
+(SVM) Accuracy on training set with 10 MFCC and 160 filters. 	: 0.8966666666666666
+(SVM) Accuracy on test set with 10 MFCC and 160 filters.	: 0.72
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 20 MFCC and 40 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 20 MFCC and 40 filters is 0.7566666666666667
+(SVM) Accuracy on training set with 20 MFCC and 40 filters. 	: 0.92
+(SVM) Accuracy on test set with 20 MFCC and 40 filters.	: 0.72
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 20 MFCC and 80 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 20 MFCC and 80 filters is 0.7633333333333334
+(SVM) Accuracy on training set with 20 MFCC and 80 filters. 	: 0.9233333333333333
+(SVM) Accuracy on test set with 20 MFCC and 80 filters.	: 0.74
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 20 MFCC and 120 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 20 MFCC and 120 filters is 0.7666666666666667
+(SVM) Accuracy on training set with 20 MFCC and 120 filters. 	: 0.91
+(SVM) Accuracy on test set with 20 MFCC and 120 filters.	: 0.74
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 20 MFCC and 160 filters are {'C': 100, 'kernel': 'rbf'}
+The best scores of SVM with 20 MFCC and 160 filters is 0.7299999999999999
+(SVM) Accuracy on training set with 20 MFCC and 160 filters. 	: 1.0
+(SVM) Accuracy on test set with 20 MFCC and 160 filters.	: 0.74
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 30 MFCC and 40 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 30 MFCC and 40 filters is 0.7533333333333333
+(SVM) Accuracy on training set with 30 MFCC and 40 filters. 	: 0.9266666666666666
+(SVM) Accuracy on test set with 30 MFCC and 40 filters.	: 0.71
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 30 MFCC and 80 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 30 MFCC and 80 filters is 0.76
+(SVM) Accuracy on training set with 30 MFCC and 80 filters. 	: 0.9266666666666666
+(SVM) Accuracy on test set with 30 MFCC and 80 filters.	: 0.72
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 30 MFCC and 120 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 30 MFCC and 120 filters is 0.7566666666666667
+(SVM) Accuracy on training set with 30 MFCC and 120 filters. 	: 0.93
+(SVM) Accuracy on test set with 30 MFCC and 120 filters.	: 0.74
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 30 MFCC and 160 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 30 MFCC and 160 filters is 0.7266666666666667
+(SVM) Accuracy on training set with 30 MFCC and 160 filters. 	: 0.91
+(SVM) Accuracy on test set with 30 MFCC and 160 filters.	: 0.75
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 40 MFCC and 40 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 40 MFCC and 40 filters is 0.7533333333333333
+(SVM) Accuracy on training set with 40 MFCC and 40 filters. 	: 0.9266666666666666
+(SVM) Accuracy on test set with 40 MFCC and 40 filters.	: 0.71
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 40 MFCC and 80 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 40 MFCC and 80 filters is 0.76
+(SVM) Accuracy on training set with 40 MFCC and 80 filters. 	: 0.9333333333333333
+(SVM) Accuracy on test set with 40 MFCC and 80 filters.	: 0.72
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 40 MFCC and 120 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 40 MFCC and 120 filters is 0.7566666666666667
+(SVM) Accuracy on training set with 40 MFCC and 120 filters. 	: 0.9333333333333333
+(SVM) Accuracy on test set with 40 MFCC and 120 filters.	: 0.74
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 40 MFCC and 160 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 40 MFCC and 160 filters is 0.73
+(SVM) Accuracy on training set with 40 MFCC and 160 filters. 	: 0.9133333333333333
+(SVM) Accuracy on test set with 40 MFCC and 160 filters.	: 0.73
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 50 MFCC and 40 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 50 MFCC and 40 filters is 0.7533333333333333
+(SVM) Accuracy on training set with 50 MFCC and 40 filters. 	: 0.9266666666666666
+(SVM) Accuracy on test set with 50 MFCC and 40 filters.	: 0.71
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 50 MFCC and 80 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 50 MFCC and 80 filters is 0.76
+(SVM) Accuracy on training set with 50 MFCC and 80 filters. 	: 0.94
+(SVM) Accuracy on test set with 50 MFCC and 80 filters.	: 0.72
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 50 MFCC and 120 filters are {'C': 10, 'kernel': 'rbf'}
+The best scores of SVM with 50 MFCC and 120 filters is 0.7566666666666667
+(SVM) Accuracy on training set with 50 MFCC and 120 filters. 	: 0.94
+(SVM) Accuracy on test set with 50 MFCC and 120 filters.	: 0.74
+
+
+Fitting 5 folds for each of 15 candidates, totalling 75 fits
+The best params of SVM with 50 MFCC and 160 filters are {'C': 100, 'kernel': 'rbf'}
+The best scores of SVM with 50 MFCC and 160 filters is 0.7333333333333334
+(SVM) Accuracy on training set with 50 MFCC and 160 filters. 	: 1.0
+(SVM) Accuracy on test set with 50 MFCC and 160 filters.	: 0.75
+
+'''
+
+
+DECISION TREE
+
+'''
+grid search raw audio on parameters
+param_grid_test = {
+    'max_depth': [5,10,50,None],
+    'min_samples_split': [2,8,20],
+    'min_samples_leaf': [1,4,8]
+}
+(same result in colab and locally)
+{'max_depth': 10, 'min_samples_leaf': 1, 'min_samples_split': 20}
+0.2566666666666667
+(Decision Tree) Accuracy on training set with raw audio. 	: 0.826
+(Decision Tree) Accuracy on test set with raw audio.	: 0.22
+
+
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 10 MFCC and 40 filters are {'max_depth': 5, 'min_samples_leaf': 8, 'min_samples_split': 2}
+The best scores of Decision Tree with 10 MFCC and 40 filters is 0.42333333333333334
+(Decision Tree) Accuracy on training set with 10 MFCC and 40 filters. 	: 0.7733333333333333
+(Decision Tree) Accuracy on test set with 10 MFCC and 40 filters.	: 0.48
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 10 MFCC and 80 filters are {'max_depth': 10, 'min_samples_leaf': 8, 'min_samples_split': 2}
+The best scores of Decision Tree with 10 MFCC and 80 filters is 0.44666666666666666
+(Decision Tree) Accuracy on training set with 10 MFCC and 80 filters. 	: 0.8
+(Decision Tree) Accuracy on test set with 10 MFCC and 80 filters.	: 0.47
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 10 MFCC and 120 filters are {'max_depth': 10, 'min_samples_leaf': 1, 'min_samples_split': 8}
+The best scores of Decision Tree with 10 MFCC and 120 filters is 0.4600000000000001
+(Decision Tree) Accuracy on training set with 10 MFCC and 120 filters. 	: 0.9266666666666666
+(Decision Tree) Accuracy on test set with 10 MFCC and 120 filters.	: 0.5  X
+
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 10 MFCC and 160 filters are {'max_depth': 10, 'min_samples_leaf': 1, 'min_samples_split': 2}
+The best scores of Decision Tree with 10 MFCC and 160 filters is 0.4366666666666667
+(Decision Tree) Accuracy on training set with 10 MFCC and 160 filters. 	: 0.9933333333333333
+(Decision Tree) Accuracy on test set with 10 MFCC and 160 filters.	: 0.48 X
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 20 MFCC and 40 filters are {'max_depth': 10, 'min_samples_leaf': 4, 'min_samples_split': 20}
+The best scores of Decision Tree with 20 MFCC and 40 filters is 0.41000000000000003
+(Decision Tree) Accuracy on training set with 20 MFCC and 40 filters. 	: 0.8066666666666666
+(Decision Tree) Accuracy on test set with 20 MFCC and 40 filters.	: 0.46
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 20 MFCC and 80 filters are {'max_depth': 10, 'min_samples_leaf': 4, 'min_samples_split': 20}
+The best scores of Decision Tree with 20 MFCC and 80 filters is 0.42666666666666664
+(Decision Tree) Accuracy on training set with 20 MFCC and 80 filters. 	: 0.8566666666666667
+(Decision Tree) Accuracy on test set with 20 MFCC and 80 filters.	: 0.49
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 20 MFCC and 120 filters are {'max_depth': 10, 'min_samples_leaf': 1, 'min_samples_split': 2}
+The best scores of Decision Tree with 20 MFCC and 120 filters is 0.4366666666666667
+(Decision Tree) Accuracy on training set with 20 MFCC and 120 filters. 	: 0.99
+(Decision Tree) Accuracy on test set with 20 MFCC and 120 filters.	: 0.44
+
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 20 MFCC and 160 filters are {'max_depth': 10, 'min_samples_leaf': 8, 'min_samples_split': 2}
+The best scores of Decision Tree with 20 MFCC and 160 filters is 0.44000000000000006
+(Decision Tree) Accuracy on training set with 20 MFCC and 160 filters. 	: 0.82
+(Decision Tree) Accuracy on test set with 20 MFCC and 160 filters.	: 0.43
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 30 MFCC and 40 filters are {'max_depth': 10, 'min_samples_leaf': 1, 'min_samples_split': 2}
+The best scores of Decision Tree with 30 MFCC and 40 filters is 0.4033333333333333
+(Decision Tree) Accuracy on training set with 30 MFCC and 40 filters. 	: 0.99
+(Decision Tree) Accuracy on test set with 30 MFCC and 40 filters.	: 0.41
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 30 MFCC and 80 filters are {'max_depth': 5, 'min_samples_leaf': 4, 'min_samples_split': 20}
+The best scores of Decision Tree with 30 MFCC and 80 filters is 0.41000000000000003
+(Decision Tree) Accuracy on training set with 30 MFCC and 80 filters. 	: 0.79
+(Decision Tree) Accuracy on test set with 30 MFCC and 80 filters.	: 0.39
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 30 MFCC and 120 filters are {'max_depth': 5, 'min_samples_leaf': 1, 'min_samples_split': 8}
+The best scores of Decision Tree with 30 MFCC and 120 filters is 0.44000000000000006
+(Decision Tree) Accuracy on training set with 30 MFCC and 120 filters. 	: 0.8233333333333334
+(Decision Tree) Accuracy on test set with 30 MFCC and 120 filters.	: 0.41
+
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 30 MFCC and 160 filters are {'max_depth': 10, 'min_samples_leaf': 8, 'min_samples_split': 20}
+The best scores of Decision Tree with 30 MFCC and 160 filters is 0.4333333333333334
+(Decision Tree) Accuracy on training set with 30 MFCC and 160 filters. 	: 0.7766666666666666
+(Decision Tree) Accuracy on test set with 30 MFCC and 160 filters.	: 0.45
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 40 MFCC and 40 filters are {'max_depth': 10, 'min_samples_leaf': 8, 'min_samples_split': 20}
+The best scores of Decision Tree with 40 MFCC and 40 filters is 0.39
+(Decision Tree) Accuracy on training set with 40 MFCC and 40 filters. 	: 0.7666666666666667
+(Decision Tree) Accuracy on test set with 40 MFCC and 40 filters.	: 0.48
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 40 MFCC and 80 filters are {'max_depth': 5, 'min_samples_leaf': 1, 'min_samples_split': 20}
+The best scores of Decision Tree with 40 MFCC and 80 filters is 0.42000000000000004
+(Decision Tree) Accuracy on training set with 40 MFCC and 80 filters. 	: 0.8066666666666666
+(Decision Tree) Accuracy on test set with 40 MFCC and 80 filters.	: 0.41
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 40 MFCC and 120 filters are {'max_depth': 5, 'min_samples_leaf': 4, 'min_samples_split': 2}
+The best scores of Decision Tree with 40 MFCC and 120 filters is 0.4333333333333334
+(Decision Tree) Accuracy on training set with 40 MFCC and 120 filters. 	: 0.8033333333333333
+(Decision Tree) Accuracy on test set with 40 MFCC and 120 filters.	: 0.43
+
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 40 MFCC and 160 filters are {'max_depth': 10, 'min_samples_leaf': 4, 'min_samples_split': 20}
+The best scores of Decision Tree with 40 MFCC and 160 filters is 0.44333333333333336
+(Decision Tree) Accuracy on training set with 40 MFCC and 160 filters. 	: 0.8166666666666667
+(Decision Tree) Accuracy on test set with 40 MFCC and 160 filters.	: 0.38
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 50 MFCC and 40 filters are {'max_depth': 10, 'min_samples_leaf': 8, 'min_samples_split': 20}
+The best scores of Decision Tree with 50 MFCC and 40 filters is 0.39
+(Decision Tree) Accuracy on training set with 50 MFCC and 40 filters. 	: 0.7666666666666667
+(Decision Tree) Accuracy on test set with 50 MFCC and 40 filters.	: 0.48
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 50 MFCC and 80 filters are {'max_depth': 5, 'min_samples_leaf': 1, 'min_samples_split': 2}
+The best scores of Decision Tree with 50 MFCC and 80 filters is 0.42333333333333334
+(Decision Tree) Accuracy on training set with 50 MFCC and 80 filters. 	: 0.8366666666666667
+(Decision Tree) Accuracy on test set with 50 MFCC and 80 filters.	: 0.44
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 50 MFCC and 120 filters are {'max_depth': 10, 'min_samples_leaf': 4, 'min_samples_split': 20}
+The best scores of Decision Tree with 50 MFCC and 120 filters is 0.44333333333333336
+(Decision Tree) Accuracy on training set with 50 MFCC and 120 filters. 	: 0.8533333333333334
+(Decision Tree) Accuracy on test set with 50 MFCC and 120 filters.	: 0.36
+
+
+Fitting 5 folds for each of 36 candidates, totalling 180 fits
+The best params of Decision Tree with 50 MFCC and 160 filters are {'max_depth': 5, 'min_samples_leaf': 1, 'min_samples_split': 2}
+The best scores of Decision Tree with 50 MFCC and 160 filters is 0.44666666666666666
+(Decision Tree) Accuracy on training set with 50 MFCC and 160 filters. 	: 0.78
+(Decision Tree) Accuracy on test set with 50 MFCC and 160 filters.	: 0.45
+
+'''
+
+
+RANDOM FOREST
+
+'''
+grid search for raw audio over the parameters parameters = {
+    'n_estimators':[50,100,150],
+    'criterion':['gini','entropy'],
+    'max_depth':[None,8,10,12],
+    'min_samples_leaf':[1,2,3]
+}
+Best parameters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 3, 'n_estimators': 100}
+Best scores is 0.4166666666666667
+(Random Forest)) Accuracy on training set with raw audio. 	: 0.9966666666666667
+(Random Forest) Accuracy on test set with raw audio.	: 0.26
+
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 10 MFCC and 40 filters are {'criterion': 'gini', 'max_depth': 10, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 10 MFCC and 40 filters is 0.7200000000000001
+(Random Forest) Accuracy on training set with 10 MFCC and 40 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 10 MFCC and 40 filters.	: 0.69
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 10 MFCC and 80 filters are {'criterion': 'gini', 'max_depth': 8, 'min_samples_leaf': 1, 'n_estimators': 50}
+The best scores of Random Forest with 10 MFCC and 80 filters is 0.7333333333333333
+(Random Forest) Accuracy on training set with 10 MFCC and 80 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 10 MFCC and 80 filters.	: 0.65
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 10 MFCC and 120 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 3, 'n_estimators': 150}
+The best scores of Random Forest with 10 MFCC and 120 filters is 0.7266666666666668
+(Random Forest) Accuracy on training set with 10 MFCC and 120 filters. 	: 0.9833333333333333
+(Random Forest) Accuracy on test set with 10 MFCC and 120 filters.	: 0.67
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 10 MFCC and 160 filters are {'criterion': 'gini', 'max_depth': 8, 'min_samples_leaf': 1, 'n_estimators': 50}
+The best scores of Random Forest with 10 MFCC and 160 filters is 0.7166666666666667
+(Random Forest) Accuracy on training set with 10 MFCC and 160 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 10 MFCC and 160 filters.	: 0.65
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 20 MFCC and 40 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 20 MFCC and 40 filters is 0.74
+(Random Forest) Accuracy on training set with 20 MFCC and 40 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 20 MFCC and 40 filters.	: 0.67
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 20 MFCC and 80 filters are {'criterion': 'gini', 'max_depth': 10, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 20 MFCC and 80 filters is 0.7366666666666667
+(Random Forest) Accuracy on training set with 20 MFCC and 80 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 20 MFCC and 80 filters.	: 0.67
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 20 MFCC and 120 filters are {'criterion': 'gini', 'max_depth': 12, 'min_samples_leaf': 1, 'n_estimators': 100}
+The best scores of Random Forest with 20 MFCC and 120 filters is 0.7300000000000001
+(Random Forest) Accuracy on training set with 20 MFCC and 120 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 20 MFCC and 120 filters.	: 0.64
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 20 MFCC and 160 filters are {'criterion': 'gini', 'max_depth': 10, 'min_samples_leaf': 2, 'n_estimators': 100}
+The best scores of Random Forest with 20 MFCC and 160 filters is 0.7466666666666667
+(Random Forest) Accuracy on training set with 20 MFCC and 160 filters. 	: 0.9966666666666667
+(Random Forest) Accuracy on test set with 20 MFCC and 160 filters.	: 0.68
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 30 MFCC and 40 filters are {'criterion': 'gini', 'max_depth': 8, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 30 MFCC and 40 filters is 0.7366666666666667
+(Random Forest) Accuracy on training set with 30 MFCC and 40 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 30 MFCC and 40 filters.	: 0.7  X
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 30 MFCC and 80 filters are {'criterion': 'gini', 'max_depth': 12, 'min_samples_leaf': 1, 'n_estimators': 100}
+The best scores of Random Forest with 30 MFCC and 80 filters is 0.74
+(Random Forest) Accuracy on training set with 30 MFCC and 80 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 30 MFCC and 80 filters.	: 0.67
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 30 MFCC and 120 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 1, 'n_estimators': 100}
+The best scores of Random Forest with 30 MFCC and 120 filters is 0.7333333333333334
+(Random Forest) Accuracy on training set with 30 MFCC and 120 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 30 MFCC and 120 filters.	: 0.65
+c:\Users\latta\miniconda3\envs\tensorf_env\lib\site-packages\librosa\feature\spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels.
+  mel_basis = filters.mel(sr=sr, n_fft=n_fft, **kwargs)
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 30 MFCC and 160 filters are {'criterion': 'entropy', 'max_depth': 8, 'min_samples_leaf': 1, 'n_estimators': 150}
+The best scores of Random Forest with 30 MFCC and 160 filters is 0.7166666666666667
+(Random Forest) Accuracy on training set with 30 MFCC and 160 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 30 MFCC and 160 filters.	: 0.63
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 40 MFCC and 40 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 40 MFCC and 40 filters is 0.7366666666666666
+(Random Forest) Accuracy on training set with 40 MFCC and 40 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 40 MFCC and 40 filters.	: 0.69
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 40 MFCC and 80 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 40 MFCC and 80 filters is 0.7333333333333334
+(Random Forest) Accuracy on training set with 40 MFCC and 80 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 40 MFCC and 80 filters.	: 0.7 X
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 40 MFCC and 120 filters are {'criterion': 'entropy', 'max_depth': 8, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 40 MFCC and 120 filters is 0.7366666666666667
+(Random Forest) Accuracy on training set with 40 MFCC and 120 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 40 MFCC and 120 filters.	: 0.67
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 40 MFCC and 160 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 1, 'n_estimators': 100}
+The best scores of Random Forest with 40 MFCC and 160 filters is 0.7233333333333333
+(Random Forest) Accuracy on training set with 40 MFCC and 160 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 40 MFCC and 160 filters.	: 0.65
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 50 MFCC and 40 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 50 MFCC and 40 filters is 0.7366666666666666
+(Random Forest) Accuracy on training set with 50 MFCC and 40 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 50 MFCC and 40 filters.	: 0.69
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 50 MFCC and 80 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 50 MFCC and 80 filters is 0.7266666666666666
+(Random Forest) Accuracy on training set with 50 MFCC and 80 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 50 MFCC and 80 filters.	: 0.65
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 50 MFCC and 120 filters are {'criterion': 'gini', 'max_depth': None, 'min_samples_leaf': 2, 'n_estimators': 150}
+The best scores of Random Forest with 50 MFCC and 120 filters is 0.7333333333333333
+(Random Forest) Accuracy on training set with 50 MFCC and 120 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 50 MFCC and 120 filters.	: 0.7  X
+
+Fitting 5 folds for each of 72 candidates, totalling 360 fits
+The best params of Random Forest with 50 MFCC and 160 filters are {'criterion': 'gini', 'max_depth': 10, 'min_samples_leaf': 1, 'n_estimators': 150}
+The best scores of Random Forest with 50 MFCC and 160 filters is 0.7366666666666666
+(Random Forest) Accuracy on training set with 50 MFCC and 160 filters. 	: 1.0
+(Random Forest) Accuracy on test set with 50 MFCC and 160 filters.	: 0.65
+
+'''
+
+
+KNN
+
+
+'''
+grid search for raw audio over the parameters
+
+parameters = {
+    'n_neighbors': [8,32,64],
+    'weights' : ['uniform', 'distance'],
+    'p':[1,2],
+}
+Best parameters are {'n_neighbors': 32, 'p': 1, 'weights': 'uniform'}
+Best scores is 0.10666666666666669
+(KNN) Accuracy on training set with raw audio. 	: 0.10666666666666667
+(KNN) Accuracy on test set with raw audio.	: 0.08
+
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 10 MFCC and 40 filters are {'n_neighbors': 8, 'p': 1, 'weights': 'distance'}
+The best scores of KNN with 10 MFCC and 40 filters is 0.6666666666666666
+(KNN) Accuracy on training set with 10 MFCC and 40 filters. 	: 1.0
+(KNN) Accuracy on test set with 10 MFCC and 40 filters.	: 0.73
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 10 MFCC and 80 filters are {'n_neighbors': 8, 'p': 1, 'weights': 'distance'}
+The best scores of KNN with 10 MFCC and 80 filters is 0.6799999999999999
+(KNN) Accuracy on training set with 10 MFCC and 80 filters. 	: 1.0
+(KNN) Accuracy on test set with 10 MFCC and 80 filters.	: 0.74
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 10 MFCC and 120 filters are {'n_neighbors': 8, 'p': 1, 'weights': 'distance'}
+The best scores of KNN with 10 MFCC and 120 filters is 0.6633333333333333
+(KNN) Accuracy on training set with 10 MFCC and 120 filters. 	: 1.0
+(KNN) Accuracy on test set with 10 MFCC and 120 filters.	: 0.74
+c:\Users\latta\miniconda3\envs\tensorf_env\lib\site-packages\librosa\feature\spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels.
+  mel_basis = filters.mel(sr=sr, n_fft=n_fft, **kwargs)
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 10 MFCC and 160 filters are {'n_neighbors': 8, 'p': 1, 'weights': 'distance'}
+The best scores of KNN with 10 MFCC and 160 filters is 0.6699999999999999
+(KNN) Accuracy on training set with 10 MFCC and 160 filters. 	: 1.0
+(KNN) Accuracy on test set with 10 MFCC and 160 filters.	: 0.7
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 20 MFCC and 40 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 20 MFCC and 40 filters is 0.6533333333333333
+(KNN) Accuracy on training set with 20 MFCC and 40 filters. 	: 1.0
+(KNN) Accuracy on test set with 20 MFCC and 40 filters.	: 0.7
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 20 MFCC and 80 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 20 MFCC and 80 filters is 0.6433333333333333
+(KNN) Accuracy on training set with 20 MFCC and 80 filters. 	: 1.0
+(KNN) Accuracy on test set with 20 MFCC and 80 filters.	: 0.7
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 20 MFCC and 120 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 20 MFCC and 120 filters is 0.6633333333333333
+(KNN) Accuracy on training set with 20 MFCC and 120 filters. 	: 1.0
+(KNN) Accuracy on test set with 20 MFCC and 120 filters.	: 0.69
+c:\Users\latta\miniconda3\envs\tensorf_env\lib\site-packages\librosa\feature\spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels.
+  mel_basis = filters.mel(sr=sr, n_fft=n_fft, **kwargs)
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 20 MFCC and 160 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 20 MFCC and 160 filters is 0.6233333333333334
+(KNN) Accuracy on training set with 20 MFCC and 160 filters. 	: 1.0
+(KNN) Accuracy on test set with 20 MFCC and 160 filters.	: 0.68
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 30 MFCC and 40 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 30 MFCC and 40 filters is 0.6599999999999999
+(KNN) Accuracy on training set with 30 MFCC and 40 filters. 	: 1.0
+(KNN) Accuracy on test set with 30 MFCC and 40 filters.	: 0.7
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 30 MFCC and 80 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 30 MFCC and 80 filters is 0.65
+(KNN) Accuracy on training set with 30 MFCC and 80 filters. 	: 1.0
+(KNN) Accuracy on test set with 30 MFCC and 80 filters.	: 0.69
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 30 MFCC and 120 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 30 MFCC and 120 filters is 0.6566666666666666
+(KNN) Accuracy on training set with 30 MFCC and 120 filters. 	: 1.0
+(KNN) Accuracy on test set with 30 MFCC and 120 filters.	: 0.7
+c:\Users\latta\miniconda3\envs\tensorf_env\lib\site-packages\librosa\feature\spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels.
+  mel_basis = filters.mel(sr=sr, n_fft=n_fft, **kwargs)
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 30 MFCC and 160 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 30 MFCC and 160 filters is 0.6100000000000001
+(KNN) Accuracy on training set with 30 MFCC and 160 filters. 	: 1.0
+(KNN) Accuracy on test set with 30 MFCC and 160 filters.	: 0.68
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 40 MFCC and 40 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 40 MFCC and 40 filters is 0.6566666666666666
+(KNN) Accuracy on training set with 40 MFCC and 40 filters. 	: 1.0
+(KNN) Accuracy on test set with 40 MFCC and 40 filters.	: 0.7
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 40 MFCC and 80 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 40 MFCC and 80 filters is 0.6533333333333333
+(KNN) Accuracy on training set with 40 MFCC and 80 filters. 	: 1.0
+(KNN) Accuracy on test set with 40 MFCC and 80 filters.	: 0.69
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 40 MFCC and 120 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 40 MFCC and 120 filters is 0.6466666666666666
+(KNN) Accuracy on training set with 40 MFCC and 120 filters. 	: 1.0
+(KNN) Accuracy on test set with 40 MFCC and 120 filters.	: 0.7
+c:\Users\latta\miniconda3\envs\tensorf_env\lib\site-packages\librosa\feature\spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels.
+  mel_basis = filters.mel(sr=sr, n_fft=n_fft, **kwargs)
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 40 MFCC and 160 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 40 MFCC and 160 filters is 0.6033333333333333
+(KNN) Accuracy on training set with 40 MFCC and 160 filters. 	: 1.0
+(KNN) Accuracy on test set with 40 MFCC and 160 filters.	: 0.68
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 50 MFCC and 40 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 50 MFCC and 40 filters is 0.6566666666666666
+(KNN) Accuracy on training set with 50 MFCC and 40 filters. 	: 1.0
+(KNN) Accuracy on test set with 50 MFCC and 40 filters.	: 0.7
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 50 MFCC and 80 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 50 MFCC and 80 filters is 0.65
+(KNN) Accuracy on training set with 50 MFCC and 80 filters. 	: 1.0
+(KNN) Accuracy on test set with 50 MFCC and 80 filters.	: 0.69
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 50 MFCC and 120 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 50 MFCC and 120 filters is 0.6433333333333333
+(KNN) Accuracy on training set with 50 MFCC and 120 filters. 	: 1.0
+(KNN) Accuracy on test set with 50 MFCC and 120 filters.	: 0.68
+c:\Users\latta\miniconda3\envs\tensorf_env\lib\site-packages\librosa\feature\spectral.py:2157: UserWarning: Empty filters detected in mel frequency basis. Some channels will produce empty responses. Try increasing your sampling rate (and fmax) or reducing n_mels.
+  mel_basis = filters.mel(sr=sr, n_fft=n_fft, **kwargs)
+
+Fitting 5 folds for each of 12 candidates, totalling 60 fits
+The best params of KNN with 50 MFCC and 160 filters are {'n_neighbors': 8, 'p': 2, 'weights': 'distance'}
+The best scores of KNN with 50 MFCC and 160 filters is 0.6
+(KNN) Accuracy on training set with 50 MFCC and 160 filters. 	: 1.0
+(KNN) Accuracy on test set with 50 MFCC and 160 filters.	: 0.68
+'''
